@@ -1,8 +1,6 @@
 // canvas & board globals
 var c, ctx;
 var canvasN = 512;   // total pixel size of canvas
-var L = 64;        // # spins per side (will be overridden)
-var Q = 3;          // # Potts states (will be overridden)
 var gpx_size;        // pixel size of one cell
 var gboard = [];
 

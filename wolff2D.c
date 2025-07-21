@@ -15,11 +15,7 @@
 #define RANDOM  ((ira[ip++] = ira[ip1++] + ira[ip2++]) ^ ira[ip3++])
 
 
-// ±1 generator -- not used -- i may cancel it
-#define pm1 ((FRANDOM > 0.5) ? 1 : -1)
-
 // Random number generator - do not touch
-
 unsigned myrand, ira[256];
 unsigned char ip, ip1, ip2, ip3;
 
@@ -31,7 +27,7 @@ struct var *s0;
 
 
 // Prepares the seed for the random number generator - LCG Park Miller
-EMSCRIPTEN_KEEPALIVE
+
 unsigned rand4init(void) {
   unsigned long long y;
   
@@ -42,7 +38,7 @@ unsigned rand4init(void) {
   return myrand;
 }
 
-EMSCRIPTEN_KEEPALIVE
+
 void initRandom(void) {
   unsigned i;
   
@@ -67,8 +63,7 @@ struct var {
 
 
 // Global variables
-int L, N, Q, *count, nTerm, nMeas;
-double temperature, Tc;
+int L, N, Q, *count;
 
 // Error function - never called
 void error(char *string) {
@@ -79,7 +74,6 @@ void error(char *string) {
 
 // Defines the neighbors of each site in the lattice
 // s is the pointer to the array of struct var
-EMSCRIPTEN_KEEPALIVE
 void initNeigh(struct var * s) {
   int ix, iy, i, j;
   
@@ -111,7 +105,6 @@ void initNeigh(struct var * s) {
 
 // Initializes the colors of the sites in the lattice and sets inCluster to 0
 // startFlag = 0 means random colors, 1 means all colors are set to 0
-EMSCRIPTEN_KEEPALIVE
 void initColors(struct var * s, int startFlag) {
   int i;
 
@@ -127,8 +120,8 @@ void initColors(struct var * s, int startFlag) {
     }
 }
 
-EMSCRIPTEN_KEEPALIVE
-void oneMetropolisStep(struct var * s) {
+
+void oneMetropolisStep(struct var * s, double temperature) {
   int i, num, dE, oldColor, newColor;
   struct var * ps;
   
@@ -158,7 +151,7 @@ void oneMetropolisStep(struct var * s) {
   }
 }
 
-EMSCRIPTEN_KEEPALIVE
+
 // ritorna la dimensione del cluster cambiato
 int oneWolffStep(struct var * s, double temperature) {
   
@@ -237,7 +230,7 @@ uint8_t* init_board(int Q_, int L_) {
 
 EMSCRIPTEN_KEEPALIVE
 uint8_t* update_board(double T) {
-  oneMetropolisStep(s0);
+  oneMetropolisStep(s0, T);
   oneWolffStep(s0, T);
 
   // refresh the byte‐array
@@ -247,7 +240,7 @@ uint8_t* update_board(double T) {
   return board;
 }
 
-EMSCRIPTEN_KEEPALIVE
+
 int main(void) {
   double Tc;
   struct var *s1;
@@ -269,12 +262,7 @@ int main(void) {
   count = (int *)calloc(Q, sizeof(int));
   coda = (struct var **)calloc(N, sizeof(struct var *));
   output = malloc(2*sizeof *output);
-  
-  // Print and makes sure it is displayed immediately
-  printf("# Q = %i   Tc = %f   T = %f   L = %i   nTerm = %i   nMeas = %i   seed = %u\n",
-	 Q, Tc, temperature, L, nTerm, nMeas, myrand);
-  // printf("# t    nCluster0    nCLuster1    E0          m0          E1          m1\n");
-  fflush(stdout);
+
 
   // Uses the functions on s0 (hot start) and s1 (cold start)
   initRandom();
