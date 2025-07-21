@@ -61,7 +61,7 @@ function init_board(N, Q, boardData) {
 }
 
 // call this after you update gboard[]
-function draw_all(board) {
+function draw_all(gboard) {
   clear();
   display_board(gN, gboard);
 }
