@@ -6,6 +6,18 @@
     <!-- Emscripten‐generated glue and our renderer -->
     <script src="wrapping.js"></script>
     <script src="potts.js"></script>
+    <style>
+      /* hide spinner arrows on number inputs */
+      input[type=number]::-webkit-inner-spin-button,
+      input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      input[type=number] {
+        -moz-appearance: textfield;
+        width: 4em;
+      }
+    </style>
 </head>
 <body>
     <p>Ci si prova</p>
@@ -18,11 +30,12 @@
       min="2" max="16" step="1"
       value="5"
       oninput="
-        document.getElementById('numColors-value').textContent = this.value
+        document.getElementById('numColors-value').textContent = this.value;
+        numColorsInput.value = this.value;
       "
     />
-    <span id="numColors-value">5</span>
-
+    <!-- keyboard entry -->
+    <input type="number" id="numColorsInput" min="2" max="16" step="1" value="5">
     <br>
 
     <!-- Slider for board size L -->
@@ -33,11 +46,12 @@
       min="2" max="256" step="1"
       value="40"
       oninput="
-        document.getElementById('boardLenght-value').textContent = this.value
+        document.getElementById('boardLenght-value').textContent = this.value;
+        boardLenInput.value = this.value;
       "
     />
-    <span id="boardLenght-value">40</span>
-
+    <!-- keyboard entry -->
+    <input type="number" id="boardLenInput" min="2" max="256" step="1" value="40">
     <br>
 
     <!-- Slider for temperature T/Tc -->
@@ -48,15 +62,12 @@
       min="0" max="3" step="0.01"
       value="1"
       oninput="
-        document.getElementById('temperature-value').textContent = this.value
+        document.getElementById('temperature-value').textContent = this.value;
+        tempInput.value = this.value;
       ">
-    <span id="temperature-value">1</span>
-
+    <!-- keyboard entry -->
+    <input type="number" id="tempInput" min="0" max="3" step="0.01" value="1">
     <br>
-
-    <!-- Placeholder numeric inputs (unused in current logic) -->
-    <input type="number" id="a">
-    <input type="number" id="b">
 
     <!-- Control buttons -->
     <button id="trigger">Trigger</button>
@@ -80,6 +91,34 @@
       const boardLenEl  = document.getElementById('boardLenght');
       const tempSlider  = document.getElementById('temperature');
       const triggerBtn  = document.getElementById('trigger');
+
+      // new keyboard inputs
+      const numColorsInput = document.getElementById('numColorsInput');
+      const boardLenInput  = document.getElementById('boardLenInput');
+      const tempInput      = document.getElementById('tempInput');
+
+      // keep slider ↔ text in sync
+      numColorsInput.addEventListener('input', e => {
+        let v = +e.target.value;
+        if (!isNaN(v)) {
+          numColors.value = v;
+          document.getElementById('numColors-value').textContent = v;
+        }
+      });
+      boardLenInput.addEventListener('input', e => {
+        let v = +e.target.value;
+        if (!isNaN(v)) {
+          boardLenEl.value = v;
+          document.getElementById('boardLenght-value').textContent = v;
+        }
+      });
+      tempInput.addEventListener('input', e => {
+        let v = +e.target.value;
+        if (!isNaN(v)) {
+          tempSlider.value = v;
+          document.getElementById('temperature-value').textContent = v;
+        }
+      });
 
       // 1) Read initial slider values
       qCount = +numColors.value;
@@ -113,6 +152,7 @@
 
       // 4) Wire the temperature slider to an immediate update
       tempSlider.addEventListener('input', updateStep);
+      tempInput.addEventListener('input', updateStep);
 
       // 5) Start automatic updates every 50 ms
       intervalId = setInterval(updateStep, 50);
