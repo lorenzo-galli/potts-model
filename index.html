@@ -14,10 +14,10 @@
       type="range"
       id="numColors"
       min="2" max="16" step="1"
-      value="4"
+      value="5"
       oninput="document.getElementById('numColors-value').textContent = this.value"
     />
-    <span id="numColors-value">2</span>
+    <span id="numColors-value">5</span>
 
     <br>
 
@@ -26,15 +26,20 @@
       type="range"
       id="boardLenght"
       min="2" max="256" step="1"
-      value="64"
+      value="40"
       oninput="document.getElementById('boardLenght-value').textContent = this.value"
     />
-    <span id="boardLenght-value">2</span>
+    <span id="boardLenght-value">40</span>
 
     <br>
 
     <label for="temperature">Temperatura (T/Tc):</label>
-    <input type="range" id="temperature" min="0" max="100" step="1">
+    <input 
+    type="range" 
+    id="temperature" 
+    min="0" max="90" step="0.01"
+    value="1"
+    oninput="document.getElementById('temperature-value').textContent = this.value">
     <span id="temperature-value">50</span>
     <br>
     <input type="number" id="a">
@@ -45,25 +50,47 @@
     <canvas id="canvas"></canvas>
 
     <script>
-      // 1) your existing WASM init happens here …
-      Module.onRuntimeInitialized = () => {
-        var Q = 5, L = 40;
-        let ptr = Module.ccall('init_board','number',['number','number'],[Q,L]);
-        const raw   = Module.HEAPU8.subarray(ptr,ptr+L*L);
-        const board = Array.from(raw);
-        init_board(L, Q, board);
-      };
 
-    const triggerButton = document.getElementById('trigger');
-    triggerButton.addEventListener('click', () => {
-        const Q = document.getElementById('numColors').value;
-        const L = document.getElementById('boardLenght').value;
-        let ptr = Module.ccall('init_board','number',['number','number'],[Q,L]);
-        const raw   = Module.HEAPU8.subarray(ptr,ptr+L*L);
-        const board = Array.from(raw);
-        init_board(L, Q, board);
+  Module.onRuntimeInitialized = () => {
+    // 1) initial parameters
+    var Q = 5; 
+    var L = 40;
 
-      });
+    // 2) draw the very first board
+    ptr = Module.ccall('init_board','number',['number','number'],[Q,L]);
+    let raw   = Module.HEAPU8.subarray(ptr, ptr + L*L);
+    let board = Array.from(raw);
+    init_board(L, Q, board);
+
+    // 3) define a reusable update function
+    function updateStep() {
+      // recompute T from the slider
+      const T = Number(document.getElementById('temperature').value) / Math.log(1 + Math.sqrt(Q));
+      // call into C and redraw
+      ptr = Module.ccall('update_board','number',['number'],[T]);
+      let updated = Module.HEAPU8.subarray(ptr, ptr + L*L);
+      gboard = Array.from(updated);
+      draw_all();
+    }
+
+    // 4) also wire the slider to update T immediately
+    document.getElementById('temperature')
+            .addEventListener('input', updateStep);
+
+    // 5) finally start the 0.05 s timer
+    setInterval(updateStep, 50);
+  };
+
+  const triggerButton = document.getElementById('trigger');
+  triggerButton.addEventListener('click', () => {
+      const Q = document.getElementById('numColors').value;
+      const L = document.getElementById('boardLenght').value;
+      let ptr = Module.ccall('init_board','number',['number','number'],[Q,L]);
+      const raw   = Module.HEAPU8.subarray(ptr,ptr+L*L);
+      const board = Array.from(raw);
+      init_board(L, Q, board);
+
+    });
     </script>
   </body>
 </html>
