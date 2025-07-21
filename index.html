@@ -2,13 +2,14 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>wolff2D</title>
+    <title>daje</title>
     <script src="wrapping.js"></script>
+    <script src="potts.js"></script>
 </head>
 <body>
     <p>Ci si prova</p>
 
-    <label for="temperature">Temperature:</label>
+    <label for="temperature">Temperatura (T/Tc):</label>
     <input type="range" id="temperature" min="0" max="100" step="1" value="50">
     <span id="temperature-value">50</span>
     <br>
@@ -17,28 +18,33 @@
     <button id="trigger">Trigger</button>
     <div id="result"></div>
 
-    <script>
-      // Show current temperature value
-      const tempSlider = document.getElementById('temperature');
-      const tempValue = document.getElementById('temperature-value');
-      tempSlider.addEventListener('input', () => {
-        tempValue.textContent = tempSlider.value;
-      });
+    <canvas id="canvas"></canvas>
 
-      document.getElementById('trigger').addEventListener('click', () => {
-        const a = Number(document.getElementById('a').value);
-        const b = Number(document.getElementById('b').value);
-        const temperature = Number(tempSlider.value);
-        const result = Module.ccall(
-          'AddNums',
-          'number',
-          ['number','number'],
-          [a, b]
-        );
-        document.getElementById('result').textContent =
-          'Result: ' + result + ', Temperature: ' + temperature;
+    <script>
+      // 1) your existing WASM init happens here …
+      Module.onRuntimeInitialized = () => {
+        var Q = 4, L = 64;
+        let ptr = Module.ccall('init_board','number',['number','number'],[Q,L]);
+        const raw   = Module.HEAPU8.subarray(ptr,ptr+L*L);
+        const board = Array.from(raw);
+        init_board(L, Q, board);
+
+        tempSlider.addEventListener('input',() => {
+          const T = Number(tempSlider.value)/100;
+          tempValue.textContent = tempSlider.value;
+          ptr = Module.ccall('update_board','number',['number'],[T]);
+          const updated = Module.HEAPU8.subarray(ptr,ptr+L*L);
+          gboard = Array.from(updated);
+          draw_all();
+        });
+      };
+
+      // 2) *Also* draw a purely‐JS random board on load, so you see something even before WASM
+      window.addEventListener('load', () => {
+        // override N,Q to whatever you like
+        init_board(20, 20);
       });
     </script>
-</body>
+  </body>
 </html>
 
