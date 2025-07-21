@@ -56,13 +56,7 @@ function init_board(N, Q, boardData) {
 
   if (boardData && boardData.length === N * N) {
     gboard = boardData.slice();
-  } else {
-    gboard = [];
-    for (var i = 0; i < N * N; i++) {
-      gboard.push(Math.floor(Math.random() * Q));
-    }
-  }
-
+  } 
   display_board(gN, gboard);
 }
 

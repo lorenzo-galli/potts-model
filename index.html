@@ -9,8 +9,32 @@
 <body>
     <p>Ci si prova</p>
 
+    <label for="numColors">Numero di Colori (Q):</label>
+    <input
+      type="range"
+      id="numColors"
+      min="2" max="16" step="1"
+      value="4"
+      oninput="document.getElementById('numColors-value').textContent = this.value"
+    />
+    <span id="numColors-value">2</span>
+
+    <br>
+
+    <label for="boardLenght">Lunghezza del Board (L):</label>
+    <input
+      type="range"
+      id="boardLenght"
+      min="2" max="256" step="1"
+      value="64"
+      oninput="document.getElementById('boardLenght-value').textContent = this.value"
+    />
+    <span id="boardLenght-value">2</span>
+
+    <br>
+
     <label for="temperature">Temperatura (T/Tc):</label>
-    <input type="range" id="temperature" min="0" max="100" step="1" value="50">
+    <input type="range" id="temperature" min="0" max="100" step="1">
     <span id="temperature-value">50</span>
     <br>
     <input type="number" id="a">
@@ -23,26 +47,22 @@
     <script>
       // 1) your existing WASM init happens here …
       Module.onRuntimeInitialized = () => {
-        var Q = 4, L = 64;
+        var Q = 5, L = 40;
+        let ptr = Module.ccall('init_board','number',['number','number'],[Q,L]);
+        const raw   = Module.HEAPU8.subarray(ptr,ptr+L*L);
+        const board = Array.from(raw);
+        init_board(L, Q, board);
+      };
+
+    const triggerButton = document.getElementById('trigger');
+    triggerButton.addEventListener('click', () => {
+        const Q = document.getElementById('numColors').value;
+        const L = document.getElementById('boardLenght').value;
         let ptr = Module.ccall('init_board','number',['number','number'],[Q,L]);
         const raw   = Module.HEAPU8.subarray(ptr,ptr+L*L);
         const board = Array.from(raw);
         init_board(L, Q, board);
 
-        tempSlider.addEventListener('input',() => {
-          const T = Number(tempSlider.value)/100;
-          tempValue.textContent = tempSlider.value;
-          ptr = Module.ccall('update_board','number',['number'],[T]);
-          const updated = Module.HEAPU8.subarray(ptr,ptr+L*L);
-          gboard = Array.from(updated);
-          draw_all();
-        });
-      };
-
-      // 2) *Also* draw a purely‐JS random board on load, so you see something even before WASM
-      window.addEventListener('load', () => {
-        // override N,Q to whatever you like
-        init_board(20, 20);
       });
     </script>
   </body>
