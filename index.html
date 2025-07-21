@@ -1,13 +1,44 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>wolff2D</title>
-    </head>
-
+    <script src="wrapping.js"></script>
+</head>
 <body>
-    <script src="a.out.js"></script>
-        
-    </body>
+    <p>Ci si prova</p>
 
+    <label for="temperature">Temperature:</label>
+    <input type="range" id="temperature" min="0" max="100" step="1" value="50">
+    <span id="temperature-value">50</span>
+    <br>
+    <input type="number" id="a">
+    <input type="number" id="b">
+    <button id="trigger">Trigger</button>
+    <div id="result"></div>
+
+    <script>
+      // Show current temperature value
+      const tempSlider = document.getElementById('temperature');
+      const tempValue = document.getElementById('temperature-value');
+      tempSlider.addEventListener('input', () => {
+        tempValue.textContent = tempSlider.value;
+      });
+
+      document.getElementById('trigger').addEventListener('click', () => {
+        const a = Number(document.getElementById('a').value);
+        const b = Number(document.getElementById('b').value);
+        const temperature = Number(tempSlider.value);
+        const result = Module.ccall(
+          'AddNums',
+          'number',
+          ['number','number'],
+          [a, b]
+        );
+        document.getElementById('result').textContent =
+          'Result: ' + result + ', Temperature: ' + temperature;
+      });
+    </script>
+</body>
 </html>
-        
+
