@@ -1,86 +1,169 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title>daje</title>
-    <!-- Emscripten‐generated glue and our renderer -->
+    <title>Modello di Potts</title>
+    <!-- Script esistenti -->
     <script src="wrapping.js"></script>
     <script src="potts.js"></script>
     <style>
-      /* hide spinner arrows on number inputs */
-      input[type=number]::-webkit-inner-spin-button,
-      input[type=number]::-webkit-outer-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-      }
-      input[type=number] {
-        -moz-appearance: textfield;
-        width: 4em;
-      }
+        /* Reset e impostazioni base */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        h1, h2 {
+            margin: 0 0 10px;
+        }
+        /* Contenitore principale due colonne */
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            padding: 20px;
+            box-sizing: border-box;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        /* Colonne sinistra e destra */
+        .left-col, .right-col {
+            background-color: #ffffff;
+            padding: 20px;
+            margin: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-sizing: border-box;
+        }
+        .left-col {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .right-col {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        /* Contenitore slider */
+        .slider-container {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 500px;
+            margin: 10px 0;
+        }
+        .slider-container label {
+            margin-right: 10px;
+            white-space: nowrap;
+        }
+        .slider-container input[type="range"] {
+            flex: 1;
+        }
+        .slider-container input[type="number"] {
+            margin-left: 10px;
+            width: 60px;
+        }
+        /* Canvas */
+        #canvas {
+            border: 1px solid #ccc;
+            margin: 20px 0;
+            width: 100%;
+            height: auto;
+        }
+        /* Pulsanti */
+        .btn-group, .right-col button, .left-col button {
+            margin: 5px;
+        }
+        button {
+            background-color: #666;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #555;
+        }
+        /* Sezione a larghezza intera */
+        .full-width {
+            background-color: #ffffff;
+            padding: 20px;
+            margin: 10px auto;
+            max-width: 1200px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        @media (max-width: 800px) {
+            .container { flex-direction: column; }
+            .left-col, .right-col { margin: 10px 0; }
+        }
+        /* Nasconde gli spinner dei numeri */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
     </style>
 </head>
 <body>
-    <p>Ci si prova</p>
 
-    <!-- Slider for number of colors Q -->
-    <label for="numColors">Numero di Colori (Q):</label>
-    <input
-      type="range"
-      id="numColors"
-      min="2" max="16" step="1"
-      value="5"
-      oninput="
-        document.getElementById('numColors-value').textContent = this.value;
-        numColorsInput.value = this.value;
-      "
-    />
-    <!-- keyboard entry -->
-    <input type="number" id="numColorsInput" min="2" max="16" step="1" value="5">
-    <br>
+    <div class="container">
+        <!-- Colonna sinistra -->
+        <div class="left-col">
+            <h1>Modello di Potts</h1>
+            <div class="slider-container">
+                <label for="temperature">Temperatura (T/T<sub>c</sub>):</label>
+                <input type="range" id="temperature" min="0" max="3" step="0.01" value="1"
+                       oninput="document.getElementById('temperature-value').textContent = this.value;
+                                tempInput.value = this.value;">
+                <span id="temperature-value"></span>
+                <input type="number" id="tempInput" min="0" max="1" step="0.01" value="1">
+            </div>
+            <canvas id="canvas"></canvas>
+            <div class="btn-group">
+                <button id="play" title="Play">▶️</button>
+                <button id="stop" title="Stop">⏹️</button>
+            </div>
+        </div>
+        <!-- Colonna destra -->
+        <div class="right-col">
+            <h2>Cambia condizioni iniziali</h2>
+            <div class="slider-container">
+                <label for="numColors">Q (Numero di stati):</label>
+                <input type="range" id="numColors" min="2" max="16" step="1" value="5"
+                       oninput="document.getElementById('numColors-value').textContent = this.value;
+                                numColorsInput.value = this.value;">
+                <span id="numColors-value">5</span>
+                <input type="number" id="numColorsInput" min="2" max="16" step="1" value="5">
+            </div>
+            <div class="slider-container">
+                <label for="boardLenght">L (Dimensione reticolo):</label>
+                <input type="range" id="boardLenght" min="2" max="256" step="1" value="40"
+                       oninput="document.getElementById('boardLenght-value').textContent = this.value;
+                                boardLenInput.value = this.value;">
+                <span id="boardLenght-value">40</span>
+                <input type="number" id="boardLenInput" min="2" max="256" step="1" value="40">
+            </div>
+            <button id="trigger">Cambia</button>
+        </div>
+    </div>
 
-    <!-- Slider for board size L -->
-    <label for="boardLenght">Lunghezza del Board (L):</label>
-    <input
-      type="range"
-      id="boardLenght"
-      min="2" max="256" step="1"
-      value="40"
-      oninput="
-        document.getElementById('boardLenght-value').textContent = this.value;
-        boardLenInput.value = this.value;
-      "
-    />
-    <!-- keyboard entry -->
-    <input type="number" id="boardLenInput" min="2" max="256" step="1" value="40">
-    <br>
+    <!-- Sezione TESTO -->
+    <div class="full-width">
+        <h2>TESTO</h2>
+        <p>Inserisci qui il testo descrittivo o informativo.</p>
+    </div>
 
-    <!-- Slider for temperature T/Tc -->
-    <label for="temperature">Temperatura (T/Tc):</label>
-    <input 
-      type="range" 
-      id="temperature" 
-      min="0" max="3" step="0.01"
-      value="1"
-      oninput="
-        document.getElementById('temperature-value').textContent = this.value;
-        tempInput.value = this.value;
-      ">
-    <!-- keyboard entry -->
-    <input type="number" id="tempInput" min="0" max="3" step="0.01" value="1">
-    <br>
-
-    <!-- Control buttons -->
-    <button id="trigger">Trigger</button>
-    <button id="play">Play</button>
-    <button id="stop">Stop</button>
-
-    <!-- Div for textual results (e.g. cluster size) -->
-    <div id="result"></div>
-
-    <!-- Canvas where the grid is drawn -->
-    <canvas id="canvas"></canvas>
-
-  <script>
+    <!-- Script esistenti -->
+    <script>
     // Globals for simulation parameters and timer handle
     let qCount, side, ptr, intervalId;
 
@@ -180,7 +263,7 @@
         init_board(side, qCount, board2);
       });
     };
-  </script>
+    </script>
+
 </body>
 </html>
-
