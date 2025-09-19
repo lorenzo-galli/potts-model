@@ -64,6 +64,7 @@ struct var {
 
 // Global variables
 int L, N, Q, *count;
+static double metrics[2];
 
 // Error function - never called
 void error(char *string) {
@@ -119,8 +120,6 @@ void initColors(struct var * s, int startFlag) {
       s[i].inCluster = 0;
     }
 }
-
-
 void oneMetropolisStep(struct var * s, double temperature) {
   int i, num, dE, oldColor, newColor;
   struct var * ps;
@@ -233,6 +232,26 @@ uint8_t* update_board(double T) {
   oneMetropolisStep(s0, T);
   oneWolffStep(s0, T);
 
+  // 2) compute energy & order
+  double E = 0.0, order = 0.0;
+  // count[i] was already zeroed in your return_energy maybe reuse it…
+  for (int i = 0; i < Q; i++) count[i] = 0;
+  for (int i = 0; i < N; i++) {
+    count[s0[i].color]++;
+    for (int k = 0; k < DEGREE/2; k++)
+      E -= (s0[i].color == s0[i].neigh[k]->color);
+  }
+  E /= N;
+  for (int i = 0; i < Q; i++) {
+    double f = (double)count[i] / N;
+    order += f * f;
+  }
+  order = (order - 1.0/Q) / (1.0 - 1.0/Q);
+
+  // 3) store into metrics
+  metrics[0] = E;
+  metrics[1] = order;
+
   // refresh the byte‐array
   for (int i = 0; i < N; i++)
     board[i] = s0[i].color;
@@ -240,6 +259,10 @@ uint8_t* update_board(double T) {
   return board;
 }
 
+EMSCRIPTEN_KEEPALIVE
+double* get_metrics() {
+  return metrics;
+}
 
 int main(void) {
   double Tc;

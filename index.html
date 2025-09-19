@@ -3,6 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Modello di Potts</title>
+    <!-- add Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Script esistenti -->
     <script src="wrapping.js"></script>
     <script src="potts.js"></script>
@@ -127,10 +129,17 @@
                 <span id="temperature-value"></span>
                 <input type="number" id="tempInput" min="0" max="1" step="0.01" value="1">
             </div>
+            <!-- your Potts‐model canvas -->
             <canvas id="canvas"></canvas>
+
+            <!-- new: graph canvas -->
+            <h2>Energy & Order vs Time</h2>
+            <canvas id="chart" width="400" height="200"></canvas>
+
             <div class="btn-group">
                 <button id="play" title="Play">▶️</button>
                 <button id="stop" title="Stop">⏹️</button>
+                <button id="toggleGraph">Toggle Graph</button>
             </div>
         </div>
         <!-- Colonna destra -->
@@ -164,8 +173,8 @@
 
     <!-- Script esistenti -->
     <script>
-    // Globals for simulation parameters and timer handle
-    let qCount, side, ptr, intervalId;
+    // Globals
+    let qCount, side, ptr, intervalId, chart, t0;
 
     // Wait for the WASM module to be ready
     Module.onRuntimeInitialized = () => {
@@ -219,41 +228,83 @@
       let board = Array.from(raw);
       init_board(side, qCount, board);  // draw initial state
 
-      // 3) Define one update step: compute T, call update_board, redraw
+      // 1) set up Chart.js
+      const ctx = document.getElementById('chart').getContext('2d');
+      chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: [],         // will be time in seconds
+          datasets: [
+            {
+              label: 'Avg Energy',
+              data: [],
+              borderColor: 'red',
+              fill: false
+            },
+            {
+              label: 'Order Parameter',
+              data: [],
+              borderColor: 'blue',
+              fill: false
+            }
+          ]
+        },
+        options: { animation: false }
+      });
+
+      t0 = performance.now();
+
+      // add at top of Module.onRuntimeInitialized:
+      let graphEnabled = true,
+          stepCounter  = 0;
+
+      // wire the new toggle button
+      document.getElementById('toggleGraph').addEventListener('click', () => {
+        graphEnabled = !graphEnabled;
+        document.getElementById('chart').style.display = graphEnabled ? 'block' : 'none';
+      });
+
+      // 2) extend updateStep()
       function updateStep() {
+        // a) update your model & redraw grid
         const T = Number(tempSlider.value) / Math.log(1 + Math.sqrt(qCount));
-        ptr = Module.ccall(
-          'update_board',
-          'number',
-          ['number'],
-          [T]
-        );
+        ptr = Module.ccall('update_board','number',['number'],[T]);
         const updated = Module.HEAPU8.subarray(ptr, ptr + side*side);
         gboard = Array.from(updated);
         draw_all(gboard);
+
+        // only every 10th call (and only if graphEnabled):
+        if (graphEnabled) {
+          // fetch metrics pointer
+          const mptr = Module.ccall('get_metrics','number',[],[]);
+          const metrics = new Float64Array(Module.HEAPF64.buffer, mptr, 2);
+          const avgE  = metrics[0],
+                order = metrics[1],
+                t     = ((performance.now() - t0)/1000).toFixed(2);
+
+          // push into chart
+          chart.data.labels.push(t);
+          chart.data.datasets[0].data.push(avgE);
+          chart.data.datasets[1].data.push(order);
+
+          // trim history if you like
+          if (chart.data.labels.length > 200) {
+            chart.data.labels.shift();
+            chart.data.datasets.forEach(ds => ds.data.shift());
+          }
+          chart.update('none');
+        }
       }
 
-      // 4) Wire the temperature slider to an immediate update
+      // 3) wire play/stop/slider as before, but use the new updateStep
       tempSlider.addEventListener('input', updateStep);
-      tempInput.addEventListener('input', updateStep);
+      tempInput .addEventListener('input', updateStep);
 
-      // 5) Start automatic updates every 50 ms
       intervalId = setInterval(updateStep, 50);
+      document.getElementById('stop').onclick = () => { clearInterval(intervalId); intervalId = null; };
+      document.getElementById('play').onclick = () => { if(!intervalId) intervalId = setInterval(updateStep,50); };
 
-      // 6) STOP button clears the timer
-      document.getElementById('stop').addEventListener('click', () => {
-        clearInterval(intervalId);
-        intervalId = null;  // allow Play to restart
-      });
-
-      // 7) PLAY button restarts if not already running
-      document.getElementById('play').addEventListener('click', () => {
-        if (!intervalId) {     // only start if we’re not already spinning
-          intervalId = setInterval(updateStep, 50);
-        }
-      });
-
-      // 8) trigger‐button re‐inits both C and JS globals
+      // 4) trigger‐button re‐init also resets the chart
       triggerBtn.addEventListener('click', () => {
         qCount = +numColors.value;
         side = +boardLenEl.value;
@@ -261,6 +312,10 @@
         let raw2   = Module.HEAPU8.subarray(ptr, ptr + side*side);
         let board2 = Array.from(raw2);
         init_board(side, qCount, board2);
+
+        chart.data.labels = [];
+        chart.data.datasets.forEach(ds => ds.data = []);
+        t0 = performance.now();
       });
     };
     </script>
