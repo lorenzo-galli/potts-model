@@ -3,59 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <title>Modello di Potts</title>
-    <!-- add Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Script esistenti -->
     <script src="wrapping.js"></script>
     <script src="potts.js"></script>
     <style>
-        /* Reset e impostazioni base */
+        /* Reset e stili base */
         body {
             margin: 0;
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
             color: #333;
         }
-        h1, h2 {
-            margin: 0 0 10px;
-        }
-        /* Contenitore principale due colonne */
+
+        /* Contenitore principale Flexbox */
         .container {
             display: flex;
-            flex-wrap: wrap;
-            padding: 20px;
+            padding: 15px;
             box-sizing: border-box;
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
+            align-items: stretch; /* Assicura che le colonne abbiano la stessa altezza */
         }
-        /* Colonne sinistra e destra */
-        .left-col, .right-col {
+
+        /* Stile comune per tutte le colonne */
+        .column {
             background-color: #ffffff;
             padding: 20px;
             margin: 10px;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             box-sizing: border-box;
-        }
-        .left-col {
-            flex: 2;
             display: flex;
             flex-direction: column;
             align-items: center;
         }
-        .right-col {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+
+        /* Colonne specifiche */
+        .board-column {
+            flex: 2; /* Colonna più grande */
         }
-        /* Contenitore slider */
+        .graph-column {
+            flex: 1.5; /* Colonna media */
+        }
+        .text-column {
+            flex: 1; /* Colonna più piccola */
+        }
+
+        /* Stili per gli elementi interni */
+        h1, h2 {
+            margin-top: 0;
+            text-align: center;
+        }
+
+        canvas {
+            border: 1px solid #ccc;
+            width: 100%;
+            height: auto;
+            margin: 15px 0;
+        }
+        
+        #chart {
+             margin-bottom: 30px;
+        }
+
         .slider-container {
             display: flex;
             align-items: center;
+            justify-content: center;
             width: 100%;
-            max-width: 500px;
+            max-width: 400px;
             margin: 10px 0;
+            flex-wrap: wrap; /* Per migliore responsività */
         }
         .slider-container label {
             margin-right: 10px;
@@ -63,22 +81,17 @@
         }
         .slider-container input[type="range"] {
             flex: 1;
+            min-width: 100px; /* Larghezza minima per lo slider */
         }
         .slider-container input[type="number"] {
             margin-left: 10px;
             width: 60px;
         }
-        /* Canvas */
-        #canvas {
-            border: 1px solid #ccc;
-            margin: 20px 0;
-            width: 100%;
-            height: auto;
+
+        .btn-group, button {
+            margin-top: 10px;
         }
-        /* Pulsanti */
-        .btn-group, .right-col button, .left-col button {
-            margin: 5px;
-        }
+
         button {
             background-color: #666;
             color: white;
@@ -87,24 +100,38 @@
             font-size: 16px;
             border-radius: 4px;
             cursor: pointer;
+            margin: 5px;
         }
         button:hover {
             background-color: #555;
         }
-        /* Sezione a larghezza intera */
-        .full-width {
-            background-color: #ffffff;
-            padding: 20px;
-            margin: 10px auto;
-            max-width: 1200px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+
+        .initial-conditions {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        @media (max-width: 800px) {
-            .container { flex-direction: column; }
-            .left-col, .right-col { margin: 10px 0; }
+        
+        p {
+            line-height: 1.6;
         }
-        /* Nasconde gli spinner dei numeri */
+
+        /* Media Query per la visualizzazione mobile */
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+            .column {
+                margin: 10px 0; /* Margine solo verticale */
+            }
+            /* Inverte l'ordine delle colonne per il mobile */
+            .board-column { order: 3; }
+            .graph-column { order: 2; }
+            .text-column { order: 1; }
+        }
+
+        /* Nasconde gli spinner dei campi numerici */
         input[type=number]::-webkit-inner-spin-button,
         input[type=number]::-webkit-outer-spin-button {
             -webkit-appearance: none;
@@ -118,60 +145,55 @@
 <body>
 
     <div class="container">
-        <!-- Colonna sinistra -->
-        <div class="left-col">
+        
+        <div class="column board-column">
             <h1>Modello di Potts</h1>
-            <div class="slider-container">
-                <label for="temperature">Temperatura (T/T<sub>c</sub>):</label>
-                <input type="range" id="temperature" min="0" max="3" step="0.01" value="1"
-                       oninput="document.getElementById('temperature-value').textContent = this.value;
-                                tempInput.value = this.value;">
-                <span id="temperature-value"></span>
-                <input type="number" id="tempInput" min="0" max="1" step="0.01" value="1">
-            </div>
-            <!-- your Potts‐model canvas -->
             <canvas id="canvas"></canvas>
-
-            <!-- new: graph canvas -->
-            <h2>Energy & Order vs Time</h2>
-            <canvas id="chart" width="400" height="200"></canvas>
-
+            <div class="slider-container">
+                <label for="temperature">T/T<sub>c</sub>:</label>
+                <input type="range" id="temperature" min="0" max="3" step="0.01" value="1"
+                       oninput="document.getElementById('temperature-value').textContent = this.value; tempInput.value = this.value;">
+                <span id="temperature-value">1</span>
+                <input type="number" id="tempInput" min="0" max="3" step="0.01" value="1">
+            </div>
             <div class="btn-group">
                 <button id="play" title="Play">▶️</button>
                 <button id="stop" title="Stop">⏹️</button>
                 <button id="toggleGraph">Toggle Graph</button>
             </div>
         </div>
-        <!-- Colonna destra -->
-        <div class="right-col">
-            <h2>Cambia condizioni iniziali</h2>
-            <div class="slider-container">
-                <label for="numColors">Q (Numero di stati):</label>
-                <input type="range" id="numColors" min="2" max="16" step="1" value="5"
-                       oninput="document.getElementById('numColors-value').textContent = this.value;
-                                numColorsInput.value = this.value;">
-                <span id="numColors-value">5</span>
-                <input type="number" id="numColorsInput" min="2" max="16" step="1" value="5">
+
+        <div class="column graph-column">
+            <h2>Graph</h2>
+            <canvas id="chart"></canvas>
+            
+            <div class="initial-conditions">
+                <h2>Initial Conditions</h2>
+                <div class="slider-container">
+                    <label for="numColors">Q (Stati):</label>
+                    <input type="range" id="numColors" min="2" max="16" step="1" value="5"
+                           oninput="document.getElementById('numColors-value').textContent = this.value; numColorsInput.value = this.value;">
+                    <span id="numColors-value">5</span>
+                    <input type="number" id="numColorsInput" min="2" max="16" step="1" value="5">
+                </div>
+                <div class="slider-container">
+                    <label for="boardLenght">L (Lato):</label>
+                    <input type="range" id="boardLenght" min="2" max="256" step="1" value="40"
+                           oninput="document.getElementById('boardLenght-value').textContent = this.value; boardLenInput.value = this.value;">
+                    <span id="boardLenght-value">40</span>
+                    <input type="number" id="boardLenInput" min="2" max="256" step="1" value="40">
+                </div>
+                <button id="trigger">Applica</button>
             </div>
-            <div class="slider-container">
-                <label for="boardLenght">L (Dimensione reticolo):</label>
-                <input type="range" id="boardLenght" min="2" max="256" step="1" value="40"
-                       oninput="document.getElementById('boardLenght-value').textContent = this.value;
-                                boardLenInput.value = this.value;">
-                <span id="boardLenght-value">40</span>
-                <input type="number" id="boardLenInput" min="2" max="256" step="1" value="40">
-            </div>
-            <button id="trigger">Cambia</button>
         </div>
+
+        <div class="column text-column">
+            <h2>Text</h2>
+            <p>"Il sistema si aggiorna ogni 50 ms più veloce e diventava un casino"</p>
+        </div>
+
     </div>
 
-    <!-- Sezione TESTO -->
-    <div class="full-width">
-        <h2>TESTO</h2>
-        <p>Inserisci qui il testo descrittivo o informativo.</p>
-    </div>
-
-    <!-- Script esistenti -->
     <script>
     // Globals
     let qCount, side, ptr, intervalId, chart, t0;
@@ -322,3 +344,4 @@
 
 </body>
 </html>
+```
