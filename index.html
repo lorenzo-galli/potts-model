@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Modello di Potts</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="wrapping.js"></script>
     <script src="potts.js"></script>
@@ -18,11 +19,13 @@
         /* Contenitore principale Flexbox */
         .container {
             display: flex;
-            padding: 15px;
-            box-sizing: border-box;
+            flex-wrap: wrap;        /* allow wrapping if it overflows */
+            align-items: stretch;
+            justify-content: space-between;
             max-width: 1400px;
             margin: 0 auto;
-            align-items: stretch; /* Assicura che le colonne abbiano la stessa altezza */
+            padding: 15px;
+            box-sizing: border-box;
         }
 
         /* Stile comune per tutte le colonne */
@@ -118,7 +121,7 @@
         }
 
         /* Media Query per la visualizzazione mobile */
-        @media (max-width: 900px) {
+        @media (max-width: 600px) {
             .container {
                 flex-direction: column;
             }
@@ -126,9 +129,9 @@
                 margin: 10px 0; /* Margine solo verticale */
             }
             /* Inverte l'ordine delle colonne per il mobile */
-            .board-column { order: 3; }
+            .board-column { order: 1; }
             .graph-column { order: 2; }
-            .text-column { order: 1; }
+            .text-column { order: 3; }
         }
 
         /* Nasconde gli spinner dei campi numerici */
@@ -344,4 +347,3 @@
 
 </body>
 </html>
-```
