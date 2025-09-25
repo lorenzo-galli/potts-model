@@ -150,7 +150,7 @@
     <div class="container">
         
         <div class="column board-column">
-            <h1>Modello di Potts</h1>
+            <h1>Potts Model</h1>
             <canvas id="canvas"></canvas>
             <div class="slider-container">
                 <label for="temperature">T/T<sub>c</sub>:</label>
@@ -181,10 +181,10 @@
                 </div>
                 <div class="slider-container">
                     <label for="boardLenght">L (Lato):</label>
-                    <input type="range" id="boardLenght" min="2" max="256" step="1" value="40"
+                    <input type="range" id="boardLenght" min="2" max="512" step="1" value="40"
                            oninput="document.getElementById('boardLenght-value').textContent = this.value; boardLenInput.value = this.value;">
                     <span id="boardLenght-value">40</span>
-                    <input type="number" id="boardLenInput" min="2" max="256" step="1" value="40">
+                    <input type="number" id="boardLenInput" min="2" max="512" step="1" value="40">
                 </div>
                 <button id="trigger">Applica</button>
             </div>
@@ -192,8 +192,15 @@
 
         <div class="column text-column">
             <h2>Explaination</h2>
-            <p>"Work in progress"</p>
-        </div>
+            <p style="font-size: small;">This website offers an interactive simulation of the Potts model, a fundamental statistical model used to study phenomena such as phase transitions in magnetic systems. The Potts model is a generalization of the Ising model: each site of a two-dimensional grid can take one of Q possible states, and interactions between neighboring sites tend to align the states, leading to ordered configurations and critical phenomena.
+
+The system updates every 50 ms using a combination of the Metropolis and Wolff algorithms. On the side, there is a chart showing the evolution of physical observables such as the average energy and the order parameter (a measure of the system’s uniformity) over time. By changing the temperature, you can observe how the system approaches equilibrium and how these observables behave near the critical point, where phase transitions occur. For Q > 4 the transition is of first order, while for Q ≤ 4 it is of second order.
+
+You can change the number of possible states and the grid size using the sliders. The source code is available on <a href="https://github.com/lorenzo-galli/potts-model">GitHub</a> This was developed as a university project.
+
+Feel free to leave suggestions or report issues on the GitHub page.
+            </p>
+          </div>
 
     </div>
 
